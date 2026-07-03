@@ -1,0 +1,133 @@
+/* =====================================================================
+   reports-offline.css
+   Self-contained styles for admin/reports.php.
+   No CDN, no external fonts, no JS chart library — works with zero
+   internet connection. All charts (bars, donut, gauges) are pure CSS.
+   ===================================================================== */
+*{box-sizing:border-box;}
+body.offline-body{margin:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;background:#f4f6f9;color:#212529;}
+
+.o-flex{display:flex;}
+.o-vh100{min-height:100vh;}
+.o-grow{flex:1 1 auto;min-width:0;}
+
+/* ---------- Sidebar ---------- */
+.o-sidebar{width:250px;flex:0 0 250px;color:#fff;transition:width .25s ease;}
+.o-sidebar.text-dark{color:#212529;}
+.o-sidebar .o-brand{text-align:center;padding:1.25rem 1rem;}
+.o-sidebar .o-brand img{width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:.5rem;border:2px solid rgba(255,255,255,.5);}
+.o-sidebar.text-dark .o-brand img{border-color:rgba(0,0,0,.2);}
+.o-sidebar .o-brand h5{margin:0;font-weight:700;font-size:1.05rem;}
+.o-nav{list-style:none;margin:0;padding:0 1rem;}
+.o-nav li{margin-bottom:.4rem;}
+.o-nav a{display:flex;align-items:center;gap:.6rem;color:inherit;text-decoration:none;padding:.55rem .75rem;border-radius:8px;font-size:.95rem;opacity:.88;}
+.o-nav a:hover{background:rgba(127,127,127,.18);opacity:1;}
+.o-nav a.active{background:rgba(127,127,127,.28);opacity:1;font-weight:600;}
+.o-nav a svg{width:18px;height:18px;flex:0 0 18px;}
+
+/* Bootstrap-style theme background colors (kept in sync with settings.php options) */
+.bg-primary{background:#0d6efd;}
+.bg-secondary{background:#6c757d;}
+.bg-success{background:#198754;}
+.bg-danger{background:#dc3545;}
+.bg-warning{background:#ffc107;color:#212529;}
+.bg-info{background:#0dcaf0;color:#212529;}
+.bg-dark{background:#212529;}
+.bg-light{background:#f8f9fa;color:#212529;}
+
+/* ---------- Topbar ---------- */
+.o-topbar{background:#fff;border-bottom:1px solid #e3e6ea;padding:.85rem 1.25rem;display:flex;align-items:center;gap:1rem;}
+.o-topbar .o-toggle{border:1px solid #ced4da;background:#fff;border-radius:6px;padding:.4rem .65rem;cursor:pointer;}
+.o-topbar .o-toggle svg{width:18px;height:18px;display:block;}
+.o-topbar .o-title{font-size:1.15rem;font-weight:600;margin:0;}
+
+/* ---------- Container / grid ---------- */
+.o-container{padding:1.5rem;max-width:1500px;margin:0 auto;}
+.o-row{display:flex;flex-wrap:wrap;margin:0 -.75rem;}
+.o-col{padding:0 .75rem;margin-bottom:1.5rem;box-sizing:border-box;}
+.o-col-3{flex:0 0 25%;max-width:25%;}
+.o-col-4{flex:0 0 33.3333%;max-width:33.3333%;}
+.o-col-6{flex:0 0 50%;max-width:50%;}
+.o-col-12{flex:0 0 100%;max-width:100%;}
+@media (max-width:992px){
+  .o-col-3{flex:0 0 50%;max-width:50%;}
+  .o-col-4{flex:0 0 50%;max-width:50%;}
+  .o-col-6{flex:0 0 100%;max-width:100%;}
+}
+@media (max-width:576px){
+  .o-col-3,.o-col-4,.o-col-6{flex:0 0 100%;max-width:100%;}
+}
+
+/* ---------- Cards ---------- */
+.o-card{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(20,30,60,.06);height:100%;}
+.o-card-body{padding:1.4rem 1.5rem;}
+.o-section-title{font-size:1.3rem;font-weight:700;margin:1.5rem 0 1rem;}
+.o-card-header{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem;border-bottom:1px solid #eef0f3;}
+.o-card-header h6{margin:0;font-weight:700;color:#33394a;font-size:.95rem;text-transform:uppercase;letter-spacing:.03em;}
+.o-empty{color:#9aa0a8;font-size:.9rem;text-align:center;padding:2.5rem 0;}
+
+/* ---------- Stat cards ---------- */
+.o-stat{padding:1.4rem 1.5rem;}
+.o-stat-label{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin-bottom:.4rem;}
+.o-stat-value{font-size:1.9rem;font-weight:800;margin-bottom:.6rem;}
+.o-stat-trend{display:inline-flex;align-items:center;gap:.3rem;font-weight:700;font-size:.95rem;padding:.15rem .55rem;border-radius:20px;margin-bottom:.7rem;}
+.o-trend-up{color:#15803d;background:#e8f8ee;}
+.o-trend-down{color:#b91c1c;background:#fdecec;}
+.o-trend-flat{color:#6b7280;background:#eef0f3;}
+.o-stat-compare{display:flex;justify-content:space-between;font-size:.78rem;color:#8a8f98;border-top:1px dashed #e7e9ec;padding-top:.6rem;}
+.o-stat-compare b{display:block;color:#33394a;font-size:.95rem;font-weight:700;}
+
+/* ---------- Bar chart (pure CSS) ---------- */
+.o-bars{display:flex;align-items:flex-end;justify-content:space-around;gap:.6rem;height:230px;padding:1rem .5rem 0;}
+.o-bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1 1 0;height:100%;}
+.o-bar{width:60%;max-width:46px;min-height:3px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#ff8a3d,#ff6b00);}
+.o-bar-val{font-size:.72rem;font-weight:700;color:#33394a;margin-bottom:.3rem;white-space:nowrap;}
+.o-bar-label{margin-top:.5rem;font-size:.75rem;color:#6b7280;text-align:center;}
+
+/* ---------- Donut chart (conic-gradient, pure CSS) ---------- */
+.o-donut-wrap{display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;padding:1rem 0;}
+.o-donut{width:170px;height:170px;border-radius:50%;position:relative;flex:0 0 170px;}
+.o-donut-center{position:absolute;inset:24px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.o-donut-center .o-dc-num{font-weight:800;font-size:1.1rem;color:#33394a;}
+.o-donut-center .o-dc-lbl{font-size:.65rem;color:#8a8f98;}
+.o-legend{display:flex;flex-direction:column;gap:.6rem;}
+.o-legend-item{display:flex;align-items:center;gap:.55rem;font-size:.88rem;color:#33394a;}
+.o-legend-dot{width:12px;height:12px;border-radius:3px;flex:0 0 12px;}
+.o-legend-item b{margin-left:auto;padding-left:1rem;}
+
+/* ---------- Gauge (semi-circle, pure CSS conic-gradient) ---------- */
+.o-gauge-row{display:flex;justify-content:space-around;align-items:flex-end;flex-wrap:wrap;gap:1.5rem;padding-top:.5rem;}
+.o-gauge-block{text-align:center;}
+.o-gauge-title{font-size:.8rem;color:#6b7280;margin-bottom:.6rem;font-weight:600;}
+.o-gauge{width:170px;height:90px;position:relative;overflow:hidden;margin:0 auto;}
+.o-gauge::before{content:'';position:absolute;top:0;left:0;width:170px;height:170px;border-radius:50%;
+  background:conic-gradient(from -90deg,
+    var(--gc) 0deg,
+    var(--gc) calc(var(--gp) * 1.8deg),
+    #e7e9ec calc(var(--gp) * 1.8deg),
+    #e7e9ec 180deg,
+    transparent 180deg, transparent 360deg);
+}
+.o-gauge::after{content:'';position:absolute;top:24px;left:24px;width:122px;height:122px;border-radius:50%;background:#fff;}
+.o-gauge-val{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:1.3rem;font-weight:800;color:#33394a;z-index:2;}
+
+/* sidebar.js toggles the toggle-button's <i> between fa-bars/fa-times classes.
+   We don't load Font Awesome (offline), so provide just these two glyphs. */
+.fas{font-style:normal;display:inline-block;width:18px;text-align:center;}
+.fas.fa-bars::before{content:"\2630";}
+.fas.fa-times::before{content:"\2715";}
+
+/* ---------- Footer ---------- */
+.o-footer{text-align:center;color:#8a8f98;padding:1.2rem;font-size:.85rem;border-top:1px solid #e7e9ec;margin-top:1rem;}
+
+/* ---------- Sidebar collapse / mobile (driven by existing sidebar.js classes) ---------- */
+.sidebar-collapsed .o-sidebar{width:78px;flex:0 0 78px;}
+.sidebar-collapsed .o-sidebar .o-brand h5,
+.sidebar-collapsed .o-sidebar .o-nav a span{display:none;}
+.sidebar-collapsed .main-expanded{margin-left:0;}
+@media (max-width:1024px){
+  .o-sidebar{position:fixed;top:0;left:0;bottom:0;z-index:1050;transform:translateX(-100%);transition:transform .25s ease;width:250px;}
+  .sidebar-open .o-sidebar{transform:translateX(0);}
+  #sidebarBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1040;}
+  #sidebarBackdrop.show{display:block;}
+}

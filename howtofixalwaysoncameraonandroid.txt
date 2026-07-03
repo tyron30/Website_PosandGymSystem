@@ -1,0 +1,9 @@
+Option 1 — Chrome flag workaround (fastest, works today, Android only)
+On each Android phone/tablet using Chrome, you can manually whitelist your server IP as a trusted secure origin:
+
+Open Chrome on the device
+Go to chrome://flags/#unsafely-treat-insecure-origin-as-secure
+In the text box, enter: http://192.168.0.243
+Set the dropdown next to it to Enabled
+Tap Relaunch at the bottom
+Reopen your scanner URL

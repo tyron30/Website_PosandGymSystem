@@ -1,0 +1,284 @@
+﻿<?php
+include "../config/db.php";
+
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'cashier') {
+    header("Location: ../index.php");
+    exit();
+}
+
+$user = $_SESSION['user'];
+
+// Fetch gym settings
+$settings = $conn->query("SELECT * FROM gym_settings WHERE id = 1")->fetch_assoc();
+if (!$settings) {
+    // Insert default settings if not exists
+    $conn->query("INSERT INTO gym_settings (gym_name, logo_path, background_path) VALUES ('Gym Management System', 'gym logo.jpg', 'gym background.jpg')");
+    $settings = $conn->query("SELECT * FROM gym_settings WHERE id = 1")->fetch_assoc();
+}
+
+// Handle check-in
+if (isset($_POST['checkin'])) {
+    $member_id = $_POST['member_id'];
+    $notes = $_POST['notes'];
+
+    // Check if member has already checked in today
+    $check_stmt = $conn->prepare("SELECT id FROM attendance WHERE member_id = ? AND DATE(checkin_time) = CURDATE()");
+    $check_stmt->bind_param("i", $member_id);
+    $check_stmt->execute();
+    $check_stmt->store_result();
+    if ($check_stmt->num_rows > 0) {
+        $check_stmt->close();
+        header("Location: attendance.php?duplicate_checkin=1");
+        exit();
+    }
+    $check_stmt->close();
+
+    $stmt = $conn->prepare("INSERT INTO attendance (member_id, notes) VALUES (?, ?)");
+    $stmt->bind_param("is", $member_id, $notes);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Handle check-out
+if (isset($_POST['checkout'])) {
+    $attendance_id = $_POST['attendance_id'];
+
+    $conn->query("UPDATE attendance SET checkout_time = NOW() WHERE id = $attendance_id");
+}
+
+// Fetch today's attendance
+$today = date('Y-m-d');
+$attendance = $conn->query("SELECT a.*, m.fullname FROM attendance a JOIN members m ON a.member_id = m.id WHERE DATE(a.checkin_time) = '$today' ORDER BY a.checkin_time DESC");
+
+// Fetch members for check-in (only those who haven't checked in today)
+$members = $conn->query("SELECT id, fullname FROM members WHERE status = 'ACTIVE' AND id NOT IN (SELECT member_id FROM attendance WHERE DATE(checkin_time) = CURDATE())");
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>Attendance Management - Gym Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../assets/style.css?v=20260630f" rel="stylesheet">
+</head>
+<body>
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="bg-<?php echo htmlspecialchars($settings['sidebar_theme']); ?> <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?> vh-100" style="width: 250px;">
+            <div class="p-3">
+                <div class="text-center mb-4">
+                    <img src="../<?php echo htmlspecialchars($settings['logo_path']); ?>" alt="Gym Logo" class="rounded-circle mb-2" style="width: 80px; height: 80px;">
+                    <h5 class="fw-bold"><?php echo htmlspecialchars($settings['gym_name']); ?></h5>
+
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="dashboard.php">
+                            <i class="fas fa-tachometer-alt me-2"></i><span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="members.php">
+                            <i class="fas fa-users me-2"></i><span>Members</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="pos.php">
+                            <i class="fas fa-cash-register me-2"></i><span>Point of Sale</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?> active" href="attendance.php">
+                            <i class="fas fa-calendar-check me-2"></i><span>Attendance</span>
+                        </a>
+                    </li>
+        
+                    <li class="nav-item mb-2">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../admin/website_settings.php">
+                            <i class="fas fa-globe me-2"></i><span>Website</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="settings.php">
+                            <i class="fas fa-cog me-2"></i><span>Settings</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link <?php echo ($settings['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white'; ?>" href="../logout.php">
+                            <i class="fas fa-sign-out-alt me-2"></i><span>Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="flex-grow-1">
+            <!-- Top Bar -->
+            <nav class="navbar navbar-light bg-light border-bottom">
+                <div class="container-fluid">
+                    <button class="btn btn-outline-secondary me-3" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <span class="navbar-brand mb-0 h1">Attendance Management - <?php echo htmlspecialchars($user['fullname']); ?> (Cashier)</span>
+                </div>
+            </nav>
+
+            <!-- Notification Messages -->
+            <?php if (isset($_GET['duplicate_checkin'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                This member has already checked in today. Cannot check in again.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <?php endif; ?>
+
+            <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h3">Attendance Management - <?php echo date('F j, Y'); ?></h1>
+                    <div>
+                        <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#checkinModal">
+                            <i class="fas fa-sign-in-alt me-1"></i>Check In Member
+                        </button>
+                        <a href="../qr_scanner_bg.php" target="_blank" class="btn btn-dark border border-success">
+                            <i class="fas fa-video me-1 text-success"></i>
+                            <span class="text-success fw-semibold">Open Always-On Scanner</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Check-in Time</th>
+                                        <th>Check-out Time</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php while ($record = $attendance->fetch_assoc()): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($record['fullname']); ?></td>
+                                        <td><?php echo date('h:i:s A', strtotime($record['checkin_time'])); ?></td>
+                                        <td>
+                                            <?php if ($record['checkout_time']): ?>
+                                                <?php echo date('h:i:s A', strtotime($record['checkout_time'])); ?>
+                                            <?php else: ?>
+                                                -
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($record['checkout_time']): ?>
+                                                <?php
+                                                $checkin = strtotime($record['checkin_time']);
+                                                $checkout = strtotime($record['checkout_time']);
+                                                $duration = $checkout - $checkin;
+                                                echo gmdate('H:i:s', $duration);
+                                                ?>
+                                            <?php else: ?>
+                                                -
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($record['checkout_time']): ?>
+                                                <span class="badge bg-success">Completed</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-warning">Active</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!$record['checkout_time']): ?>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="attendance_id" value="<?php echo $record['id']; ?>">
+                                                <button type="submit" name="checkout" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-sign-out-alt"></i> Check Out
+                                                </button>
+                                            </form>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                    <?php endwhile; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center text-muted py-3 mt-5 border-top">
+        <div class="container">
+            <small>Developed by Tyron Del Valle</small>
+        </div>
+    </footer>
+
+    <!-- Check-in Modal -->
+    <div class="modal fade" id="checkinModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Member Check-in</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Select Member</label>
+                            <select class="form-control" name="member_id" required>
+                                <option value="">Choose Member</option>
+                                <?php while ($member = $members->fetch_assoc()): ?>
+                                <option value="<?php echo $member['id']; ?>"><?php echo htmlspecialchars($member['fullname']); ?></option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" name="notes" rows="2" placeholder="Any additional notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" name="checkin" class="btn btn-success">Check In</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/sidebar.js"></script>
+    <script>
+        // ── Audio feedback ──────────────────────────────────────────────
+        const _AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let _audioCtx = null;
+        function _getACtx() { if (!_audioCtx) _audioCtx = new _AudioCtx(); return _audioCtx; }
+        function _tone(freq, dur, type='sine', vol=0.4, delay=0) {
+            const ctx=_getACtx(), osc=ctx.createOscillator(), g=ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.type=type; osc.frequency.setValueAtTime(freq, ctx.currentTime+delay);
+            g.gain.setValueAtTime(0,ctx.currentTime+delay);
+            g.gain.linearRampToValueAtTime(vol,ctx.currentTime+delay+0.01);
+            g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+dur);
+            osc.start(ctx.currentTime+delay); osc.stop(ctx.currentTime+delay+dur+0.05);
+        }
+        const _sounds = {
+            checkin()  { _tone(660,.12,'sine',.4,0); _tone(880,.20,'sine',.4,.15); },
+            checkout() { _tone(880,.12,'sine',.35,0); _tone(660,.20,'sine',.35,.15); },
+            error()    { _tone(180,.4,'sawtooth',.35,0); _tone(150,.4,'sawtooth',.35,.45); },
+            warning()  { _tone(440,.15,'square',.3,0); _tone(440,.15,'square',.3,.22); _tone(440,.15,'square',.3,.44); }
+        };
+        document.addEventListener('click', ()=>{ if(_audioCtx) _audioCtx.resume(); }, {once:true});
+    </script>
+</body>
+</html>
