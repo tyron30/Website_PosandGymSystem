@@ -535,6 +535,11 @@ $trainers = $conn->query("SELECT * FROM website_trainers ORDER BY sort_order, id
 $gallery  = $conn->query("SELECT * FROM website_gallery ORDER BY sort_order, id")->fetch_all(MYSQLI_ASSOC);
 
 $settings_page = $conn->query("SELECT * FROM gym_settings WHERE id = 1")->fetch_assoc();
+
+// Sidebar must look/behave the same as every other admin/cashier page.
+$is_admin   = $user['role'] === 'admin';
+$base       = $is_admin ? '' : '../cashier/';
+$nav_class  = ($settings_page['sidebar_theme'] == 'light') ? 'text-dark' : 'text-white';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -544,10 +549,12 @@ $settings_page = $conn->query("SELECT * FROM gym_settings WHERE id = 1")->fetch_
 <title>Website Management — Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="../assets/style.css?v=20260630f" rel="stylesheet">
+<script src="../assets/toast.js"></script>
 <style>
 :root { --gold: #F5A623; }
 .page-header { background: linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%); color: #fff; padding: 28px 0; margin-bottom: 28px; border-radius: 0 0 16px 16px; }
-.page-header h1 { font-size: 1.5rem; font-weight: 800; margin: 0; }
+.page-header h1 { font-size: 1.5rem; font-weight: 800; margin: 0; color: #fff; }
 .page-header p  { font-size: .85rem; color: rgba(255,255,255,.55); margin: 4px 0 0; }
 .nav-tabs .nav-link { font-weight: 600; font-size: .85rem; color: #6b7280; }
 .nav-tabs .nav-link.active { color: var(--gold); border-bottom-color: var(--gold); }
@@ -564,16 +571,84 @@ $settings_page = $conn->query("SELECT * FROM gym_settings WHERE id = 1")->fetch_
 .preview-btn:hover { background: #333; color: #fff; }
 </style>
 </head>
-<body class="bg-light">
+<body>
+<div class="d-flex">
+    <!-- Sidebar (identical markup/behavior to every other admin & cashier page) -->
+    <nav id="sidebar" class="bg-<?= htmlspecialchars($settings_page['sidebar_theme']) ?> <?= $nav_class ?> vh-100" style="width: 250px;">
+        <div class="p-3">
+            <div class="text-center mb-4">
+                <img src="../<?= htmlspecialchars($settings_page['logo_path']) ?>" alt="Gym Logo" class="rounded-circle mb-2" style="width: 80px; height: 80px;">
+                <h5 class="fw-bold"><?= htmlspecialchars($settings_page['gym_name']) ?></h5>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link <?= $nav_class ?>" href="<?= $base ?>dashboard.php">
+                        <i class="fas fa-tachometer-alt me-2"></i><span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link <?= $nav_class ?>" href="<?= $base ?>members.php">
+                        <i class="fas fa-users me-2"></i><span>Members</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link <?= $nav_class ?>" href="<?= $base ?>pos.php">
+                        <i class="fas fa-cash-register me-2"></i><span>Point of Sale</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link <?= $nav_class ?>" href="<?= $base ?>attendance.php">
+                        <i class="fas fa-calendar-check me-2"></i><span>Attendance</span>
+                    </a>
+                </li>
+                <?php if ($is_admin): ?>
+                <li class="nav-item mb-2">
+                    <a class="nav-link <?= $nav_class ?>" href="reports.php">
+                        <i class="fas fa-chart-bar me-2"></i><span>Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link <?= $nav_class ?>" href="employees.php">
+                        <i class="fas fa-user-tie me-2"></i><span>Employees</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                <li class="nav-item mb-2">
+                    <a class="nav-link <?= $nav_class ?> active" href="website_settings.php">
+                        <i class="fas fa-globe me-2"></i><span>Website</span>
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link <?= $nav_class ?>" href="<?= $base ?>settings.php">
+                        <i class="fas fa-cog me-2"></i><span>Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item mt-4">
+                    <a class="nav-link <?= $nav_class ?>" href="../logout.php">
+                        <i class="fas fa-sign-out-alt me-2"></i><span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex-grow-1">
+        <!-- Top Bar -->
+        <nav class="navbar navbar-light bg-light border-bottom">
+            <div class="container-fluid">
+                <button class="btn btn-outline-secondary me-3" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="navbar-brand mb-0 h1">Website Management - <?= htmlspecialchars($user['fullname']) ?> (<?= ucfirst($user['role']) ?>)</span>
+            </div>
+        </nav>
 
 <!-- Header -->
 <div class="page-header">
   <div class="container-fluid px-4">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
       <div>
-        <div class="d-flex align-items-center gap-3 mb-1">
-          <a href="<?= htmlspecialchars($back_dashboard) ?>" class="text-white-50 text-decoration-none" style="font-size:.82rem"><i class="fas fa-arrow-left me-1"></i> Back to Dashboard</a>
-        </div>
         <h1><i class="fas fa-globe me-2" style="color:var(--gold)"></i> Website Management</h1>
         <p>Manage your promotional website content, bookings, and inquiries — <?= htmlspecialchars($user['fullname']) ?> (<?= ucfirst($user['role']) ?>)</p>
       </div>
@@ -1261,7 +1336,17 @@ $settings_page = $conn->query("SELECT * FROM gym_settings WHERE id = 1")->fetch_
   </div>
   <?php endif; ?>
 
-</div>
+</div><!-- /.container-fluid -->
+
+    <!-- Footer -->
+    <footer class="bg-light text-center text-muted py-3 mt-5 border-top">
+        <div class="container">
+            <small>Developed by Tyron Del Valle</small>
+        </div>
+    </footer>
+
+    </div><!-- /.flex-grow-1 -->
+</div><!-- /.d-flex -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../assets/sidebar.js"></script>

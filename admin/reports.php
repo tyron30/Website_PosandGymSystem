@@ -294,7 +294,7 @@ function icon($name) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reports - <?php echo htmlspecialchars($gym_name); ?></title>
-    <link href="../assets/reports-offline.css?v=2" rel="stylesheet">
+    <link href="../assets/reports-offline.css?v=5" rel="stylesheet">
     <style>
     /* ── Generate Report section ─────────────────────────────── */
     .gr-topbar { display:flex; justify-content:flex-end; margin-bottom:1.5rem; }
@@ -337,6 +337,19 @@ function icon($name) {
     .gr-btn-export { padding:.55rem 1.4rem; background:#217346; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:.85rem; cursor:pointer; display:none; align-items:center; gap:.45rem; }
     .gr-btn-export:hover { background:#1a5c38; }
     .gr-btn-export svg { width:16px; height:16px; }
+
+    /* ── Sidebar collapse (defensive duplicate of the fix in reports-offline.css,
+       inlined here so it works even if that external file is stale/cached) ── */
+    .o-sidebar.sidebar-collapsed { width: 70px !important; flex: 0 0 70px !important; }
+    .o-sidebar.sidebar-collapsed .o-brand { padding: .75rem .5rem !important; }
+    .o-sidebar.sidebar-collapsed .o-brand img { width: 40px !important; height: 40px !important; }
+    .o-sidebar.sidebar-collapsed .o-brand h5,
+    .o-sidebar.sidebar-collapsed .o-nav a span { display: none !important; }
+    .o-sidebar.sidebar-collapsed .o-nav { padding: 0 .5rem !important; }
+    .o-sidebar.sidebar-collapsed .o-nav a { justify-content: center !important; padding: .6rem !important; gap: 0 !important; }
+    @media (max-width: 1024px) {
+        .o-sidebar.sidebar-open { transform: translateX(0) !important; }
+    }
     </style>
 </head>
 <body class="offline-body">
@@ -362,7 +375,7 @@ function icon($name) {
 
     <div class="o-grow" id="mainContent">
         <div class="o-topbar">
-            <button class="o-toggle" id="sidebarToggle"><?php echo icon('bars'); ?></button>
+            <button class="o-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
             <p class="o-title">Reports — <?php echo htmlspecialchars($user['fullname']); ?> (Admin)</p>
         </div>
 
